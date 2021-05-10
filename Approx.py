@@ -12,7 +12,7 @@ def test(n):
     dataY = f(dataX)
 
     poly1 = lagrange(dataX, dataY)
-    poly2 = polynomial(dataX, dataY)
+    poly2 = least_squares(dataX, dataY)
 
     _, ax = plt.subplots(figsize=(10, 6))
     ax.scatter(dataX, f(dataX))
@@ -31,22 +31,19 @@ def test(n):
     plt.show()
 
 
-def polynomial(x_data, y_data):
+def least_squares(x_data, y_data):
     n = len(x_data)
     matr_a = np.zeros((n, n), dtype=float)
-    vect_b = np.zeros((n, 1), dtype=float)
+    vect_b = np.zeros(n, dtype=float)
 
     for i in xrange(n):
         vect_b[i] = np.sum(y_data * x_data**i)
-        matr_a[i] = np.array([np.sum(x_data**(i+j)) for j in range(n)])
+        matr_a[i] = np.array([np.sum(x_data**(i+j)) for j in xrange(n)])
     vect_a = np.linalg.solve(matr_a, vect_b)
+    result = np.polynomial.polynomial.Polynomial(vect_a)
 
     def P(x):
-        total = 0.0
-        for i in xrange(n):
-            total += vect_a[i, 0]*(x**i)
-        return total
-
+        return result(x)
     return P
 
 
@@ -62,3 +59,6 @@ def lagrange(x_data, y_data):
             total += y_data[i] * tot_mul
         return total
     return P
+
+
+test(5)
