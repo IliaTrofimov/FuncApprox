@@ -79,6 +79,7 @@ def sqr_spline(x_data, y_data, dy_data=None):
     if dy_data is None:
         dy_data = np.zeros_like(y_data)
 
+
     matrix = np.array([
         [1, x_data[0], x_data[0] ** 2],
         [1, x_data[1], x_data[1] ** 2],
