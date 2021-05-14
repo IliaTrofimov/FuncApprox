@@ -123,14 +123,3 @@ def sqr_spline(x_data, y_data, dy_data=None):
             return result
     return p, dp
 
-
-x = [0, 2, 4, 5, 7]
-y = np.sin(x)
-dy = np.cos(x)
-grid = np.linspace(0, 7, 100)
-p, dp = sqr_spline(x, y, dy)
-
-plt.scatter(x, y)
-plt.plot(grid, p(grid))
-#plt.plot(grid, np.sin(grid), color="red")
-plt.show()
