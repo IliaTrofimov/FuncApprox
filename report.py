@@ -24,6 +24,7 @@ def task1():
     years = np.array(list(sample.keys()))
     popul = np.array(list(sample.values()))
 
+
     print(f"\tНаселение Польши в {years[0]}-{years[7]} гг. (млн. чел.)")
     print("годы: |", *years[:7], "| ", years[8])
     print("----------------------------------------------------")
