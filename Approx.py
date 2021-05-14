@@ -81,19 +81,20 @@ def sqr_spline(x_data, y_data, dy_data=None):
 
     matrix = np.array([
         [1, x_data[0], x_data[0] ** 2],
-        [1, x_data[1], x_data[0] ** 2],
-        [0, 1, 2 * x_data[1]]
-    ])
+        [1, x_data[1], x_data[1] ** 2],
+        [0, 1, x_data[0] ** 2]
+    ], dtype=float)
 
-    b_vect = np.array([y_data[0], y_data[1], dy_data[0]])
+    b_vect = np.array([y_data[0], y_data[1], dy_data[0]], dtype=float)
     polynomials = {x_data[0]: np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))}
-    matrix[2, 1] = 0
+    matrix[2, 0] = 0
+    matrix[2, 1] = 1
 
     for i in range(1, len(x_data) - 1):
         matrix[:2, 1:] = [[x_data[i], x_data[i] ** 2],
                           [x_data[i+1], x_data[i+1] ** 2]]
-        matrix[2, 2] = 2 * (x_data[i+1] - x_data[i])
-        b_vect = np.array([y_data[i], y_data[i + 1], polynomials[x_data[i-1]].deriv()(x_data[i]) - dy_data[i+1]])
+        matrix[2, 2] = 2 * x_data[i]
+        b_vect = np.array([y_data[i], y_data[i + 1], dy_data[i]])
         polynomials[x_data[i]] = np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))
 
     def p(x):
@@ -107,16 +108,28 @@ def sqr_spline(x_data, y_data, dy_data=None):
                 key = nearest(x[j], keys)
                 result[j] = polynomials[key](x[j])
             return result
-    return p
+
+    def dp(x):
+        keys = list(polynomials.keys())
+        if isinstance(x, (float, int)):
+            key = nearest(x, keys)
+            return polynomials[key].deriv()(x)
+        else:
+            result = np.zeros_like(x)
+            for j in range(len(x)):
+                key = nearest(x[j], keys)
+                result[j] = polynomials[key].deriv()(x[j])
+            return result
+    return p, dp
 
 
-x = [1, 2, 4, 5, 7]
+x = [0, 2, 4, 5, 7]
 y = np.sin(x)
 dy = np.cos(x)
-grid = np.linspace(1, 7, 100)
-spline = sqr_spline(x, y, dy)
+grid = np.linspace(0, 7, 100)
+p, dp = sqr_spline(x, y, dy)
 
 plt.scatter(x, y)
-plt.scatter(x, dy, color="gray")
-plt.plot(grid, spline(grid))
+plt.plot(grid, p(grid))
+#plt.plot(grid, np.sin(grid), color="red")
 plt.show()
