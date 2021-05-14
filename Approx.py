@@ -40,14 +40,13 @@ def least_squares(n, x_data, y_data):
     vect_a = np.linalg.solve(matr_a, vect_b)
     result = np.polynomial.polynomial.Polynomial(vect_a)
 
-    def P(x):
+    def p(x):
         return result(x)
-
-    return P
+    return p
 
 
 def lagrange(x_data, y_data):
-    def P(x):
+    def p(x):
         total = 0.0
         n = len(x_data)
         for i in range(n):
@@ -57,23 +56,22 @@ def lagrange(x_data, y_data):
                     tot_mul *= (x - x_data[j]) / float(x_data[i] - x_data[j])
             total += y_data[i] * tot_mul
         return total
+    return p
 
-    return P
 
-
-def nearest(val: float, arr: list[float]):
+def nearest(val: float, arr: list):
     k = 0
     for i in range(len(arr)):
         if val == arr[i]:
             return arr[i]
-        elif abs(val - arr[i]) < abs(val - arr[k]) and val > val[i]:
+        elif abs(val - arr[i]) < abs(val - arr[k]) and val > arr[i]:
             k = i
     return arr[k]
 
 
 def sqr_spline(x_data, y_data, dy_data=None):
     if len(x_data) != len(y_data):
-        raise ValueError(f"x_data and y_data sizes do not match!")
+        raise ValueError("x_data and y_data sizes do not match!")
 
     x_data = np.asarray(x_data)
     y_data = np.asarray(y_data)
@@ -92,21 +90,33 @@ def sqr_spline(x_data, y_data, dy_data=None):
     matrix[2, 1] = 0
 
     for i in range(1, len(x_data) - 1):
-        matrix[0:, 0:] = [[x_data[i], x_data[i] ** 2],
+        matrix[:2, 1:] = [[x_data[i], x_data[i] ** 2],
                           [x_data[i+1], x_data[i+1] ** 2]]
         matrix[2, 2] = 2 * (x_data[i+1] - x_data[i])
-        b_vect = np.array([y_data[i], y_data[i + 1], polynomials[x_data[i-1]].deriv()[x_data[i]] - dy_data[i+1]])
-        polynomials = {x_data[i]: np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))}
+        b_vect = np.array([y_data[i], y_data[i + 1], polynomials[x_data[i-1]].deriv()(x_data[i]) - dy_data[i+1]])
+        polynomials[x_data[i]] = np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))
 
     def p(x):
+        keys = list(polynomials.keys())
         if isinstance(x, (float, int)):
-            key = nearest(x, polynomials.keys())
+            key = nearest(x, keys)
             return polynomials[key](x)
         else:
-            get_keys = np.vectorize(nearest, excluded="arr")
-            keys = get_keys(x)
             result = np.zeros_like(x)
-            for j in len(keys):
-                result[i] = polynomials[keys[j]](x[j])
-
+            for j in range(len(x)):
+                key = nearest(x[j], keys)
+                result[j] = polynomials[key](x[j])
             return result
+    return p
+
+
+x = [1, 2, 4, 5, 7]
+y = np.sin(x)
+dy = np.cos(x)
+grid = np.linspace(1, 7, 100)
+spline = sqr_spline(x, y, dy)
+
+plt.scatter(x, y)
+plt.scatter(x, dy, color="gray")
+plt.plot(grid, spline(grid))
+plt.show()
