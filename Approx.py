@@ -3,6 +3,13 @@ from matplotlib import pyplot as plt
 
 
 def ls_polynomial(n, x_data, y_data):
+    """
+    Функция возвращает многочлен по методу наименьших квадратов.
+    :param n: степень многочлена, следует ставить не больше, чем размерность x_data
+    :param x_data: координаты узловых точек по оси Ох
+    :param y_data: координаты узловых точек по оси Оу
+    :return: результирующий многочлен, можно сохранить его подобно указателю на функцию в С++
+    """
     if len(x_data) != len(y_data):
         raise ValueError("x_data and y_data sizes do not match!")
 
@@ -12,8 +19,7 @@ def ls_polynomial(n, x_data, y_data):
     for i in range(n):
         vect_b[i] = np.sum(y_data * x_data ** i)
         matr[i] = np.array([np.sum(x_data ** (i + j)) for j in range(n)])
-    vect_a = np.linalg.solve(matr, vect_b)
-    result = np.polynomial.polynomial.Polynomial(vect_a)
+    result = np.polynomial.polynomial.Polynomial(np.linalg.solve(matr, vect_b))
 
     def p(x):
         return result(x)
@@ -21,6 +27,12 @@ def ls_polynomial(n, x_data, y_data):
 
 
 def lagrange(x_data, y_data):
+    """
+    Интерполяционный многочлен Лагранжа.
+    :param x_data: координаты узловых точек по оси Ох
+    :param y_data: координаты узловых точек по оси Оу
+    :return: результирующий многочлен, можно сохранить его подобно указателю на функцию в С++
+    """
     if len(x_data) != len(y_data):
         raise ValueError("x_data and y_data sizes do not match!")
 
@@ -37,7 +49,10 @@ def lagrange(x_data, y_data):
     return p
 
 
-def nearest(val: float, arr: list):
+def _nearest(val: float, arr: list):
+    """
+    Ищет ближайшее к val значение в списке arr.
+    """
     k = 0
     for i in range(len(arr)):
         if val == arr[i]:
@@ -48,8 +63,16 @@ def nearest(val: float, arr: list):
 
 
 def sqr_spline(x_data, y_data, dy=None):
-    if len(x_data) != len(y_data):
-        raise ValueError("x_data and y_data sizes do not match!")
+    """
+    Квадратический сплайн с дополнительным условием на равенство производной P_i'(x_a) и произваодной функции f'(x_a)
+    :param x_data: координаты узловых точек по оси Ох, размерность должна быть не меньше 3
+    :param y_data: координаты узловых точек по оси Оу, размерность должна быть не меньше 3
+    :param dy значение производной аппроксимируемой функции в левом конце отрезка, влияет на первую параболу.
+        Если опустить первая парабола будет строиться по первым трём точкам.
+    :return: результирующий сплайн, можно сохранить его подобно указателю на функцию в С++
+    """
+    if len(x_data) != len(y_data) or len(x_data) < 3:
+        raise ValueError("x_data and y_data sizes do not match or too small!")
 
     x_data = np.asarray(x_data)
     y_data = np.asarray(y_data)
@@ -80,12 +103,12 @@ def sqr_spline(x_data, y_data, dy=None):
     def p(x):
         keys = list(polynomials.keys())
         if isinstance(x, (float, int)):
-            key = nearest(x, keys)
+            key = _nearest(x, keys)
             return polynomials[key](x)
         else:
             result = np.zeros_like(x)
             for j in range(len(x)):
-                key = nearest(x[j], keys)
+                key = _nearest(x[j], keys)
                 result[j] = polynomials[key](x[j])
             return result
     return p
