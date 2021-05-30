@@ -1,4 +1,8 @@
+import sys
+
 import numpy as np
+from sys import argv
+from operator import itemgetter, attrgetter
 from matplotlib import pyplot as plt
 
 
@@ -12,7 +16,9 @@ def ls_polynomial(n, x_data, y_data):
     """
     if len(x_data) != len(y_data):
         raise ValueError("x_data and y_data sizes do not match!")
-
+    n += 1
+    x_data = np.asarray(x_data)
+    y_data = np.asarray(y_data)
     matr = np.zeros((n, n), dtype=float)
     vect_b = np.zeros(n, dtype=float)
 
@@ -23,6 +29,7 @@ def ls_polynomial(n, x_data, y_data):
 
     def p(x):
         return result(x)
+
     return p
 
 
@@ -36,6 +43,9 @@ def lagrange(x_data, y_data):
     if len(x_data) != len(y_data):
         raise ValueError("x_data and y_data sizes do not match!")
 
+    x_data = np.asarray(x_data)
+    y_data = np.asarray(y_data)
+
     def p(x):
         total = 0.0
         n = len(x_data)
@@ -46,6 +56,7 @@ def lagrange(x_data, y_data):
                     tot_mul *= (x - x_data[j]) / float(x_data[i] - x_data[j])
             total += y_data[i] * tot_mul
         return total
+
     return p
 
 
@@ -85,7 +96,7 @@ def sqr_spline(x_data, y_data, dy=None):
     b_vect = np.array([y_data[0], y_data[1], y_data[2]], dtype=float)
 
     if dy is not None:
-        matrix[2] = [0, 1, 2*x_data[0]]
+        matrix[2] = [0, 1, 2 * x_data[0]]
         b_vect[2] = dy
 
     polynomials = {x_data[0]: np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))}
@@ -94,10 +105,10 @@ def sqr_spline(x_data, y_data, dy=None):
 
     for i in range(1, len(x_data) - 1):
         matrix[:2, 1:] = [[x_data[i], x_data[i] ** 2],
-                          [x_data[i+1], x_data[i+1] ** 2]]
-        matrix[2, 2] = 2*x_data[i]
+                          [x_data[i + 1], x_data[i + 1] ** 2]]
+        matrix[2, 2] = 2 * x_data[i]
 
-        b_vect = np.array([y_data[i], y_data[i + 1], polynomials[x_data[i-1]].deriv()(x_data[i])])
+        b_vect = np.array([y_data[i], y_data[i + 1], polynomials[x_data[i - 1]].deriv()(x_data[i])])
         polynomials[x_data[i]] = np.polynomial.Polynomial(np.linalg.solve(matrix, b_vect))
 
     def p(x):
@@ -111,4 +122,49 @@ def sqr_spline(x_data, y_data, dy=None):
                 key = _nearest(x[j], keys)
                 result[j] = polynomials[key](x[j])
             return result
+
     return p
+
+
+# TEST FUNCTIONS
+def _collect_data(n: int):
+    data = []
+    print("Input points like this 'x y':")
+    for _ in range(n):
+        data.append(tuple(map(float, input().split())))
+    return sorted(data, key=itemgetter(0))
+
+
+def main():
+    available = ("lagrange", "ls_polynomial", "sqr_spline", "help")
+    try:
+        _, method, points_count = argv
+    except ValueError:
+        print("Not enough parameters")
+        print("Enter method name and points count.")
+        print("Available methods:", *available)
+        return
+
+    if method not in available:
+        raise Exception("Unknown parameter")
+
+    x, y = list(zip(*_collect_data(int(points_count))))
+    plt.scatter(x, y)
+    grid = np.linspace(x[0], x[-1], 1000)
+
+    if method == "lagrange":
+        model = lagrange(x, y)
+    if method == "ls_polynomial":
+        model = ls_polynomial(int(input("Enter polynomial power (less then points count): ")), x, y)
+    if method == "sqr_spline":
+        model = sqr_spline(x, y, float(input("Enter f'(a): ")))
+    else:
+        print("Enter method name and points count.")
+        print("Available methods:", *available)
+
+    plt.plot(grid, model(grid))
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
